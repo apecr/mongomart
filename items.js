@@ -167,20 +167,20 @@ function ItemDAO(database) {
   };
 
 
-  this.addReview = function(itemId, comment, name, stars, callback) {
+  this.addReview = async function(itemId, comment, name, stars, callback) {
     'use strict';
 
     /*
-                 * TODO-lab4
-                 *
-                 * LAB #4: Implement addReview().
-                 *
-                 * Using the itemId parameter, update the appropriate document in the
-                 * "item" collection with a new review. Reviews are stored as an
-                 * array value for the key "reviews". Each review has the fields:
-                 * "name", "comment", "stars", and "date".
-                 *
-                 */
+    * TODO-lab4
+    *
+    * LAB #4: Implement addReview().
+    *
+    * Using the itemId parameter, update the appropriate document in the
+    * "item" collection with a new review. Reviews are stored as an
+    * array value for the key "reviews". Each review has the fields:
+    * "name", "comment", "stars", and "date".
+    *
+    */
 
     var reviewDoc = {
       name: name,
@@ -191,8 +191,12 @@ function ItemDAO(database) {
 
     // TODO replace the following two lines with your code that will
     // update the document with a new review.
-    var doc = this.createDummyItem();
-    doc.reviews = [ reviewDoc ];
+    await this.db.collection('item')
+      .update(
+        {_id: itemId},
+        {$push: {reviews: reviewDoc}});
+
+    var doc = getItemById({itemId, db: this.db});
 
     // TODO Include the following line in the appropriate
     // place within your code to pass the updated doc to the
