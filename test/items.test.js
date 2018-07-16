@@ -26,8 +26,8 @@ describe('Test Items', () => {
     };
     return getCategoriesPromisified()
       .then(categories => {
-        console.log(categories);
         expect(categories.length).to.be.equal(9);
+        expect(categories.filter(element => element._id === 'All')[0].num).to.be.equal(23);
       });
   });
   it('Should aggregate categories', () => {
@@ -35,7 +35,7 @@ describe('Test Items', () => {
       {
         $group: {
           _id: '$category',
-          elements: { $addToSet: '$img_url' }
+          elements: { $addToSet: '$_id' }
         }
       },
       {
@@ -61,10 +61,12 @@ describe('Test Items', () => {
             return prev + category.num;
           }, 0)
         });
-        console.log(categories);
         expect(categories.length).to.be.equal(9);
-        expect(categories.filter(element => element._id === 'All')[0].num).to.be.equal(22);
+        expect(categories.filter(element => element._id === 'All')[0].num).to.be.equal(23);
       });
+  });
+  it('Shoudl get items filtered by category', () => {
+
   });
   after('Close connection', () => {
     db.close();

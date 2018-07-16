@@ -56,7 +56,7 @@ function ItemDAO(database) {
       {
         $group: {
           _id: '$category',
-          elements: { $addToSet: '$img_url' }
+          elements: { $addToSet: '$_id' }
         }
       },
       {
