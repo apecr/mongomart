@@ -65,8 +65,77 @@ describe('Test Items', () => {
         expect(categories.filter(element => element._id === 'All')[0].num).to.be.equal(23);
       });
   });
-  it('Shoudl get items filtered by category', () => {
-
+  const getItems = ({ category, page = 0, itemsPerPage = 5 }) => {
+    return db.collection('item')
+      .find(category !== 'All' ? { category } : {})
+      .sort({ _id: 1 })
+      .skip(page > 0 ? ((page) * itemsPerPage) : 0)
+      .limit(itemsPerPage)
+      .toArray();
+  };
+  it('Should get items filtered by category ', () => {
+    return getItems({
+      category: 'Umbrellas'
+    }).then(itemsFiltered => {
+      itemsFiltered.forEach(element => {
+        expect(element.category).to.be.equal('Umbrellas');
+      });
+    });
+  });
+  it('Shoudl get items filtered by category, include page and itemsPerPage ', () => {
+    return getItems({
+      category: 'Apparel',
+      page: 0,
+      itemsPerPage: 5
+    }).then(itemsFiltered => {
+      itemsFiltered.forEach(element => {
+        expect(element.category).to.be.equal('Apparel');
+      });
+      expect(itemsFiltered.length).to.be.equal(5);
+    });
+  });
+  it('Shoudl get items filtered by category, include page and itemsPerPage ', () => {
+    return getItems({
+      category: 'Apparel',
+      page: 1,
+      itemsPerPage: 5
+    }).then(itemsFiltered => {
+      itemsFiltered.forEach(element => {
+        expect(element.category).to.be.equal('Apparel');
+      });
+      expect(itemsFiltered.length).to.be.equal(1);
+    });
+  });
+  it('Should get all categories', () => {
+    return getItems({
+      category: 'All',
+      page: 0,
+      itemsPerPage: 30
+    }).then(itemsFiltered => {
+      expect(itemsFiltered.filter(element => element.category === 'Umbrellas').length).to.be.equal(2);
+      expect(itemsFiltered.length).to.be.equal(23);
+    });
+  });
+  it('Should get all categories', () => {
+    return getItems({
+      category: 'All'
+    }).then(itemsFiltered => {
+      expect(itemsFiltered.filter(element => element.category === 'Umbrellas').length).to.be.equal(0);
+      expect(itemsFiltered.length).to.be.equal(5);
+    });
+  });
+  const getNumItems = ({category = 'All'}) => {
+    return db.collection('item')
+      .find(category !== 'All' ? { category } : {})
+      .count();
+  };
+  it('Should get the count for a category', () => {
+    return getNumItems({category: 'Umbrellas'})
+      .then(count => expect(count).to.be.equal(2));
+  });
+  it('Should get the count for a category', () => {
+    return getNumItems({category: 'Apparel'})
+      .then(count => expect(count).to.be.equal(6));
   });
   after('Close connection', () => {
     db.close();

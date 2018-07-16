@@ -75,7 +75,7 @@ function ItemDAO(database) {
       }
     ])
       .toArray();
-    categories.push({
+    categories.unshift({
       _id: 'All',
       num: categories.reduce((prev, category) => {
         return prev + category.num;
@@ -91,7 +91,7 @@ function ItemDAO(database) {
   };
 
 
-  this.getItems = function(category, page, itemsPerPage, callback) {
+  this.getItems = async function(category, page, itemsPerPage, callback) {
     'use strict';
 
     /*
@@ -116,11 +116,13 @@ function ItemDAO(database) {
     *
     */
 
-    var pageItem = this.createDummyItem();
-    var pageItems = [];
-    for (var i = 0; i < 5; i++) {
-      pageItems.push(pageItem);
-    }
+
+    const pageItems = await this.db.collection('item')
+      .find(category !== 'All' ? { category } : {})
+      .sort({ _id: 1 })
+      .skip(page > 0 ? ((page) * itemsPerPage) : 0)
+      .limit(itemsPerPage)
+      .toArray();
 
     // TODO-lab1B Replace all code above (in this method).
 
@@ -131,25 +133,27 @@ function ItemDAO(database) {
   };
 
 
-  this.getNumItems = function(category, callback) {
+  this.getNumItems = async function(category, callback) {
     'use strict';
 
-    var numItems = 0;
+    var numItems = await this.db.collection('item')
+      .find(category !== 'All' ? { category } : {})
+      .count();
 
     /*
-                 * TODO-lab1C:
-                 *
-                 * LAB #1C: Implement the getNumItems method()
-                 *
-                 * Write a query that determines the number of items in a category
-                 * and pass the count to the callback function. The count is used in
-                 * the mongomart application for pagination. The category is passed
-                 * as a parameter to this method.
-                 *
-                 * See the route handler for the root path (i.e. "/") for an example
-                 * of a call to the getNumItems() method.
-                 *
-                 */
+    * TODO-lab1C:
+    *
+    * LAB #1C: Implement the getNumItems method()
+    *
+    * Write a query that determines the number of items in a category
+    * and pass the count to the callback function. The count is used in
+    * the mongomart application for pagination. The category is passed
+    * as a parameter to this method.
+    *
+    * See the route handler for the root path (i.e. "/") for an example
+    * of a call to the getNumItems() method.
+    *
+    */
 
     // TODO Include the following line in the appropriate
     // place within your code to pass the count to the callback.
