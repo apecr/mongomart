@@ -25,7 +25,7 @@ const CartDAO = require('./cart').CartDAO;
 
 
 // Set up express
-app = express();
+const app = express();
 app.set('view engine', 'html');
 app.set('views', __dirname + '/views');
 app.use('/static', express.static(__dirname + '/static'));
@@ -37,6 +37,19 @@ app.use(bodyParser.urlencoded({ extended: true }));
  Not using consolidate because I'm waiting on better support for template inheritance with
  nunjucks via consolidate. See: https://github.com/tj/consolidate.js/pull/224
 */
+
+function cartTotal(userCart) {
+  'use strict';
+
+  var total = 0;
+  for (var i = 0; i < userCart.items.length; i++) {
+    var item = userCart.items[i];
+    total += item.price * item.quantity;
+  }
+
+  return total;
+}
+
 var env = nunjucks.configure('views', {
   autoescape: true,
   express: app
@@ -60,7 +73,7 @@ MongoClient.connect('mongodb://localhost:27017/mongomart', function(err, db) {
   var items = new ItemDAO(db);
   var cart = new CartDAO(db);
 
-  var router = express.Router();
+  var router = new express.Router();
 
   // Homepage
   router.get('/', function(req, res) {
@@ -133,7 +146,7 @@ MongoClient.connect('mongodb://localhost:27017/mongomart', function(err, db) {
     items.getItem(itemId, function(item) {
       console.log(item);
 
-      if (item == null) {
+      if (item === null) {
         res.status(404).send('Item not found.');
         return;
       }
@@ -234,10 +247,10 @@ MongoClient.connect('mongodb://localhost:27017/mongomart', function(err, db) {
     };
 
     cart.itemInCart(userId, itemId, function(item) {
-      if (item == null) {
-        items.getItem(itemId, function(item) {
-          item.quantity = 1;
-          cart.addItem(userId, item, function(userCart) {
+      if (item === null) {
+        items.getItem(itemId, function(intitem) {
+          intitem.quantity = 1;
+          cart.addItem(userId, intitem, function(userCart) {
             renderCart(userCart);
           });
 
@@ -269,19 +282,6 @@ MongoClient.connect('mongodb://localhost:27017/mongomart', function(err, db) {
         });
     });
   });
-
-
-  function cartTotal(userCart) {
-    'use strict';
-
-    var total = 0;
-    for (var i = 0; i < userCart.items.length; i++) {
-      var item = userCart.items[i];
-      total += item.price * item.quantity;
-    }
-
-    return total;
-  }
 
 
   // Use the router routes in our application
