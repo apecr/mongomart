@@ -18,6 +18,13 @@
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
+const getCartByUserId = ({userId, db}) => {
+  return db.collection('cart')
+    .findOne({
+      userId
+    });
+};
+
 
 function CartDAO(database) {
   'use strict';
@@ -25,7 +32,7 @@ function CartDAO(database) {
   this.db = database;
 
 
-  this.getCart = function(userId, callback) {
+  this.getCart = async function(userId, callback) {
     'use strict';
 
     /*
@@ -37,6 +44,7 @@ function CartDAO(database) {
             * callback function.
             *
             */
+    const cart = await getCartByUserId({userId, db: this.db});
 
     var userCart = {
       userId: userId,
@@ -50,7 +58,7 @@ function CartDAO(database) {
     // TODO Include the following line in the appropriate
     // place within your code to pass the userCart to the
     // callback.
-    callback(userCart);
+    callback(cart);
   };
 
 
