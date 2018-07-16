@@ -137,6 +137,28 @@ describe('Test Items', () => {
     return getNumItems({category: 'Apparel'})
       .then(count => expect(count).to.be.equal(6));
   });
+  const searchItems = ({query, page, itemsPerPage}) => {
+    return db.collection('item')
+      .find({
+        $text: {
+          $search: query
+        }
+      })
+      .sort({ _id: 1 })
+      .skip(page > 0 ? ((page) * itemsPerPage) : 0)
+      .limit(itemsPerPage)
+      .toArray();
+  };
+  it('Should filter by index', () => {
+    return searchItems({
+      query: 'leaf',
+      page: 1,
+      itemsPerPage: 5
+    })
+      .then(elements => {
+        expect(elements.length).to.be.equal(2);
+      });
+  });
   after('Close connection', () => {
     db.close();
   });
