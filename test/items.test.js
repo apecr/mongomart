@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
 const chai = require('chai');
 const _ = require('lodash');
-const ItemDAO = require('./../items').ItemDAO;
+const {ItemDAO, getItemById} = require('./../items');
 const MongoClient = require('mongodb').MongoClient;
 
 /* global define, it, describe, before, beforeEach, afterEach, after */
@@ -157,6 +157,12 @@ describe('Test Items', () => {
     })
       .then(elements => {
         expect(elements.length).to.be.equal(2);
+      });
+  });
+  it('Should get element by id', () => {
+    return getItemById({itemId: 1, db})
+      .then(item => {
+        expect(item.title).to.be.equal('Gray Hooded Sweatshirt');
       });
   });
   after('Close connection', () => {

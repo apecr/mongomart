@@ -31,6 +31,11 @@ const searchItems = ({ query, page, itemsPerPage, db }) => {
     .toArray();
 };
 
+const getItemById = ({itemId, db}) => {
+  return db.collection('item')
+    .findOne({_id: itemId});
+};
+
 
 function ItemDAO(database) {
   'use strict';
@@ -126,20 +131,20 @@ function ItemDAO(database) {
   };
 
 
-  this.getItem = function(itemId, callback) {
+  this.getItem = async function(itemId, callback) {
     'use strict';
 
     /*
-                 * TODO-lab3
-                 *
-                 * LAB #3: Implement the getItem() method.
-                 *
-                 * Using the itemId parameter, query the "item" collection by
-                 * _id and pass the matching item to the callback function.
-                 *
-                 */
+    * TODO-lab3
+    *
+    * LAB #3: Implement the getItem() method.
+    *
+    * Using the itemId parameter, query the "item" collection by
+    * _id and pass the matching item to the callback function.
+    *
+    */
 
-    var item = this.createDummyItem();
+    var item = await getItemById({itemId, db: this.db});
 
     // TODO-lab3 Replace all code above (in this method).
 
@@ -216,4 +221,8 @@ function ItemDAO(database) {
 }
 
 
-module.exports.ItemDAO = ItemDAO;
+module.exports = {
+  ItemDAO: ItemDAO,
+  searchItems,
+  getItemById
+};
