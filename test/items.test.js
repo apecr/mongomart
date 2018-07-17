@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
 const chai = require('chai');
 const _ = require('lodash');
-const {ItemDAO, getItemById} = require('./../items');
+const { ItemDAO, getItems, getNumItems } = require('./../items');
 const MongoClient = require('mongodb').MongoClient;
 
 /* global define, it, describe, before, beforeEach, afterEach, after */
@@ -11,7 +11,6 @@ describe('Test Items', () => {
   before('Create connection', () => {
     return MongoClient.connect('mongodb://localhost:27017', { useNewUrlParser: true })
       .then(client => {
-        console.log('Succesfully connected to local mongo');
         db = client.db('mongomart');
         items = new ItemDAO(db);
       });
@@ -65,17 +64,10 @@ describe('Test Items', () => {
         expect(categories.filter(element => element._id === 'All')[0].num).to.be.equal(23);
       });
   });
-  const getItems = ({ category, page = 0, itemsPerPage = 5 }) => {
-    return db.collection('item')
-      .find(category !== 'All' ? { category } : {})
-      .sort({ _id: 1 })
-      .skip(page > 0 ? ((page) * itemsPerPage) : 0)
-      .limit(itemsPerPage)
-      .toArray();
-  };
   it('Should get items filtered by category ', () => {
     return getItems({
-      category: 'Umbrellas'
+      category: 'Umbrellas',
+      db
     }).then(itemsFiltered => {
       itemsFiltered.forEach(element => {
         expect(element.category).to.be.equal('Umbrellas');
@@ -86,7 +78,8 @@ describe('Test Items', () => {
     return getItems({
       category: 'Apparel',
       page: 0,
-      itemsPerPage: 5
+      itemsPerPage: 5,
+      db
     }).then(itemsFiltered => {
       itemsFiltered.forEach(element => {
         expect(element.category).to.be.equal('Apparel');
@@ -94,11 +87,12 @@ describe('Test Items', () => {
       expect(itemsFiltered.length).to.be.equal(5);
     });
   });
-  it('Shoudl get items filtered by category, include page and itemsPerPage ', () => {
+  it('Should get items filtered by category, include page and itemsPerPage ', () => {
     return getItems({
       category: 'Apparel',
       page: 1,
-      itemsPerPage: 5
+      itemsPerPage: 5,
+      db
     }).then(itemsFiltered => {
       itemsFiltered.forEach(element => {
         expect(element.category).to.be.equal('Apparel');
@@ -106,48 +100,48 @@ describe('Test Items', () => {
       expect(itemsFiltered.length).to.be.equal(1);
     });
   });
-  it('Should get all categories', () => {
+  it('Should get all categories with pagination', () => {
     return getItems({
       category: 'All',
       page: 0,
-      itemsPerPage: 30
+      itemsPerPage: 30,
+      db
     }).then(itemsFiltered => {
       expect(itemsFiltered.filter(element => element.category === 'Umbrellas').length).to.be.equal(2);
       expect(itemsFiltered.length).to.be.equal(23);
     });
   });
-  it('Should get all categories', () => {
-    return getItems({
-      category: 'All'
-    }).then(itemsFiltered => {
-      expect(itemsFiltered.filter(element => element.category === 'Umbrellas').length).to.be.equal(0);
-      expect(itemsFiltered.length).to.be.equal(5);
-    });
+  it('Should get all categories inside ItemDao', () => {
+    const getItemsPromisified = () => {
+      return new Promise((resolve, reject) => {
+        items.getItems('All', 0, 5, itemsFiltered => {
+          resolve(itemsFiltered);
+        });
+      });
+    };
+    return getItemsPromisified()
+      .then(itemsFiltered => {
+        expect(itemsFiltered.filter(element => element.category === 'Umbrellas').length).to.be.equal(0);
+        expect(itemsFiltered.length).to.be.equal(5);
+      });
   });
-  const getNumItems = ({category = 'All'}) => {
-    return db.collection('item')
-      .find(category !== 'All' ? { category } : {})
-      .count();
-  };
   it('Should get the count for a category', () => {
-    return getNumItems({category: 'Umbrellas'})
+    return getNumItems({ category: 'Umbrellas', db })
       .then(count => expect(count).to.be.equal(2));
   });
   it('Should get the count for a category', () => {
-    return getNumItems({category: 'Apparel'})
+    const getNumItemsPromisified = ({ category }) => new Promise((resolve, reject) => {
+      items.getNumItems(category, numItems => {
+        resolve(numItems);
+      });
+    });
+    return getNumItemsPromisified({ category: 'Apparel' })
       .then(count => expect(count).to.be.equal(6));
   });
-  const searchItems = ({query, page, itemsPerPage}) => {
-    return db.collection('item')
-      .find({
-        $text: {
-          $search: query
-        }
-      })
-      .sort({ _id: 1 })
-      .skip(page > 0 ? ((page) * itemsPerPage) : 0)
-      .limit(itemsPerPage)
-      .toArray();
+  const searchItems = ({ query, page, itemsPerPage }) => {
+    return new Promise((resolve, reject) => {
+      items.searchItems(query, page, itemsPerPage, itemsSearched => resolve(itemsSearched));
+    });
   };
   it('Should filter by index', () => {
     return searchItems({
@@ -159,11 +153,25 @@ describe('Test Items', () => {
         expect(elements.length).to.be.equal(2);
       });
   });
+  const getItemById = ({itemId}) => {
+    return new Promise((resolve, reject) => {
+      items.getItem(itemId, resolve);
+    });
+  };
   it('Should get element by id', () => {
-    return getItemById({itemId: 1, db})
+    return getItemById({ itemId: 1, db })
       .then(item => {
         expect(item.title).to.be.equal('Gray Hooded Sweatshirt');
       });
+  });
+  const getNumSearchItemsPromisified = ({query}) => {
+    return new Promise((resolve, reject) => {
+      items.getNumSearchItems(query, resolve);
+    });
+  };
+  it('Should get the number of items searched', () => {
+    return getNumSearchItemsPromisified({query: 'leaf'})
+      .then(count => expect(count).to.be.equal(7));
   });
   after('Close connection', () => {
     db.close();

@@ -36,6 +36,21 @@ const getItemById = ({itemId, db}) => {
     .findOne({_id: itemId});
 };
 
+const getItems = ({ category, page = 0, itemsPerPage = 5, db }) => {
+  return db.collection('item')
+    .find(category !== 'All' ? { category } : {})
+    .sort({ _id: 1 })
+    .skip(page > 0 ? ((page) * itemsPerPage) : 0)
+    .limit(itemsPerPage)
+    .toArray();
+};
+
+const getNumItems = ({category = 'All', db}) => {
+  return db.collection('item')
+    .find(category !== 'All' ? { category } : {})
+    .count();
+};
+
 
 function ItemDAO(database) {
   'use strict';
@@ -80,15 +95,7 @@ function ItemDAO(database) {
 
   this.getItems = async function(category, page, itemsPerPage, callback) {
     'use strict';
-
-
-    const pageItems = await this.db.collection('item')
-      .find(category !== 'All' ? { category } : {})
-      .sort({ _id: 1 })
-      .skip(page > 0 ? ((page) * itemsPerPage) : 0)
-      .limit(itemsPerPage)
-      .toArray();
-
+    const pageItems = await getItems({category, page, itemsPerPage, db: this.db});
     callback(pageItems);
   };
 
@@ -96,9 +103,7 @@ function ItemDAO(database) {
   this.getNumItems = async function(category, callback) {
     'use strict';
 
-    var numItems = await this.db.collection('item')
-      .find(category !== 'All' ? { category } : {})
-      .count();
+    var numItems = await getNumItems({category, db: this.db});
 
     callback(numItems);
   };
@@ -133,24 +138,7 @@ function ItemDAO(database) {
 
   this.getItem = async function(itemId, callback) {
     'use strict';
-
-    /*
-    * TODO-lab3
-    *
-    * LAB #3: Implement the getItem() method.
-    *
-    * Using the itemId parameter, query the "item" collection by
-    * _id and pass the matching item to the callback function.
-    *
-    */
-
     var item = await getItemById({itemId, db: this.db});
-
-    // TODO-lab3 Replace all code above (in this method).
-
-    // TODO Include the following line in the appropriate
-    // place within your code to pass the matching item
-    // to the callback.
     callback(item);
   };
 
@@ -169,38 +157,18 @@ function ItemDAO(database) {
 
   this.addReview = async function(itemId, comment, name, stars, callback) {
     'use strict';
-
-    /*
-    * TODO-lab4
-    *
-    * LAB #4: Implement addReview().
-    *
-    * Using the itemId parameter, update the appropriate document in the
-    * "item" collection with a new review. Reviews are stored as an
-    * array value for the key "reviews". Each review has the fields:
-    * "name", "comment", "stars", and "date".
-    *
-    */
-
     var reviewDoc = {
       name: name,
       comment: comment,
       stars: stars,
       date: Date.now()
     };
-
-    // TODO replace the following two lines with your code that will
-    // update the document with a new review.
     await this.db.collection('item')
       .update(
         {_id: itemId},
         {$push: {reviews: reviewDoc}});
 
     var doc = getItemById({itemId, db: this.db});
-
-    // TODO Include the following line in the appropriate
-    // place within your code to pass the updated doc to the
-    // callback.
     callback(doc);
   };
 
@@ -228,5 +196,7 @@ function ItemDAO(database) {
 module.exports = {
   ItemDAO: ItemDAO,
   searchItems,
-  getItemById
+  getItemById,
+  getItems,
+  getNumItems
 };
